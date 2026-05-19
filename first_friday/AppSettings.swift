@@ -1,0 +1,149 @@
+import Foundation
+import SwiftUI
+
+enum AudioMode: String, CaseIterable, Identifiable {
+    case none
+    case radio
+    case music
+    case coolStations
+
+    var id: String { rawValue }
+    var label: String {
+        switch self {
+        case .none:         return "No Music"
+        case .radio:        return "Internet Radio URL"
+        case .music:        return "Apple Music"
+        case .coolStations: return "Cool Stations"
+        }
+    }
+}
+
+enum AppleMusicMode: String, CaseIterable, Identifiable {
+    case playlist
+    case liveStation
+
+    var id: String { rawValue }
+    var label: String {
+        switch self {
+        case .playlist:    return "Playlist"
+        case .liveStation: return "Live Station"
+        }
+    }
+}
+
+enum ArtworkSource: String, CaseIterable, Identifiable {
+    case webdav
+    case builtin
+
+    var id: String { rawValue }
+    var label: String {
+        switch self {
+        case .webdav:  return "WebDAV Server"
+        case .builtin: return "Built-in Paintings"
+        }
+    }
+}
+
+@Observable
+final class AppSettings {
+
+    var serverURL: String {
+        didSet { UserDefaults.standard.set(serverURL, forKey: "serverURL") }
+    }
+    var username: String {
+        didSet { UserDefaults.standard.set(username, forKey: "username") }
+    }
+    var password: String {
+        didSet { Keychain.save(password) }
+    }
+    var radioURL: String {
+        didSet { UserDefaults.standard.set(radioURL, forKey: "radioURL") }
+    }
+    var playlistID: String {
+        didSet { UserDefaults.standard.set(playlistID, forKey: "playlistID") }
+    }
+    var playlistName: String {
+        didSet { UserDefaults.standard.set(playlistName, forKey: "playlistName") }
+    }
+    var playlistShuffle: Bool {
+        didSet { UserDefaults.standard.set(playlistShuffle, forKey: "playlistShuffle") }
+    }
+    var audioMode: AudioMode {
+        didSet { UserDefaults.standard.set(audioMode.rawValue, forKey: "audioMode") }
+    }
+    var imageDuration: TimeInterval {
+        didSet { UserDefaults.standard.set(imageDuration, forKey: "imageDuration") }
+    }
+    var artworkSource: ArtworkSource {
+        didSet { UserDefaults.standard.set(artworkSource.rawValue, forKey: "artworkSource") }
+    }
+    var coolStationID: String {
+        didSet { UserDefaults.standard.set(coolStationID, forKey: "coolStationID") }
+    }
+    var coolStationName: String {
+        didSet { UserDefaults.standard.set(coolStationName, forKey: "coolStationName") }
+    }
+    var appleMusicMode: AppleMusicMode {
+        didSet { UserDefaults.standard.set(appleMusicMode.rawValue, forKey: "appleMusicMode") }
+    }
+    var appleMusicLiveStationID: String {
+        didSet { UserDefaults.standard.set(appleMusicLiveStationID, forKey: "appleMusicLiveStationID") }
+    }
+    var appleMusicLiveStationName: String {
+        didSet { UserDefaults.standard.set(appleMusicLiveStationName, forKey: "appleMusicLiveStationName") }
+    }
+
+    var isConfigured: Bool {
+        !serverURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    init() {
+        let env = ProcessInfo.processInfo.environment
+        let defaults = UserDefaults.standard
+
+        self.serverURL = defaults.string(forKey: "serverURL") ?? env["WEBDAV_URL"] ?? ""
+
+        self.username = defaults.string(forKey: "username")
+            ?? env["WEBDAV_USER"] ?? ""
+        self.password = Keychain.load()
+            ?? env["WEBDAV_PASS"] ?? ""
+
+        self.radioURL = defaults.string(forKey: "radioURL") ?? ""
+
+        self.playlistID = defaults.string(forKey: "playlistID") ?? ""
+        self.playlistName = defaults.string(forKey: "playlistName") ?? ""
+        self.playlistShuffle = defaults.bool(forKey: "playlistShuffle")
+
+        let modeRaw = defaults.string(forKey: "audioMode") ?? ""
+        self.audioMode = AudioMode(rawValue: modeRaw) ?? .coolStations
+
+        let storedDuration = defaults.double(forKey: "imageDuration")
+        self.imageDuration = storedDuration > 0 ? storedDuration : 120
+
+        let sourceRaw = defaults.string(forKey: "artworkSource") ?? ""
+        self.artworkSource = ArtworkSource(rawValue: sourceRaw) ?? .webdav
+
+        self.coolStationID = defaults.string(forKey: "coolStationID") ?? "wfmu"
+        self.coolStationName = defaults.string(forKey: "coolStationName") ?? "WFMU"
+
+        let amModeRaw = defaults.string(forKey: "appleMusicMode") ?? ""
+        self.appleMusicMode = AppleMusicMode(rawValue: amModeRaw) ?? .playlist
+
+        self.appleMusicLiveStationID = defaults.string(forKey: "appleMusicLiveStationID") ?? ""
+        self.appleMusicLiveStationName = defaults.string(forKey: "appleMusicLiveStationName") ?? ""
+    }
+
+    func makeClient() -> WebDAVClient? {
+        var s = serverURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !s.isEmpty else { return nil }
+        let lower = s.lowercased()
+        if !lower.hasPrefix("http://") && !lower.hasPrefix("https://") {
+            s = "http://" + s
+        }
+        guard var url = URL(string: s) else { return nil }
+        if !url.absoluteString.hasSuffix("/") {
+            url = URL(string: url.absoluteString + "/") ?? url
+        }
+        return WebDAVClient(baseURL: url, username: username, password: password)
+    }
+}
