@@ -34,17 +34,9 @@ final class AudioPlayer {
                 startRadio(urlString: station.url)
             }
         case .music:
-            switch settings.appleMusicMode {
-            case .playlist:
-                let pid = settings.playlistID.trimmingCharacters(in: .whitespacesAndNewlines)
-                if !pid.isEmpty {
-                    await startMusic(playlistID: pid, shuffle: settings.playlistShuffle)
-                }
-            case .liveStation:
-                let sid = settings.appleMusicLiveStationID.trimmingCharacters(in: .whitespacesAndNewlines)
-                if !sid.isEmpty {
-                    await startLiveStation(stationID: sid)
-                }
+            let pid = settings.playlistID.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !pid.isEmpty {
+                await startMusic(playlistID: pid, shuffle: settings.playlistShuffle)
             }
         }
     }
@@ -113,32 +105,6 @@ final class AudioPlayer {
             startMusicNowPlayingPoll()
         } catch {
             mode = .error("Music playback failed: \(error.localizedDescription)")
-        }
-    }
-
-    private func startLiveStation(stationID: String) async {
-        let auth = await MusicAuthorization.request()
-        guard auth == .authorized else {
-            mode = .error("Apple Music access not authorized")
-            return
-        }
-
-        do {
-            let id = MusicItemID(stationID)
-            let request = MusicCatalogResourceRequest<Station>(matching: \.id, equalTo: id)
-            let response = try await request.response()
-            guard let station = response.items.first else {
-                mode = .error("Live station not found")
-                return
-            }
-
-            musicPlayer.queue = ApplicationMusicPlayer.Queue(for: [station])
-            try await musicPlayer.prepareToPlay()
-            try await musicPlayer.play()
-            mode = .music
-            startMusicNowPlayingPoll()
-        } catch {
-            mode = .error("Station playback failed: \(error.localizedDescription)")
         }
     }
 

@@ -18,19 +18,6 @@ enum AudioMode: String, CaseIterable, Identifiable {
     }
 }
 
-enum AppleMusicMode: String, CaseIterable, Identifiable {
-    case playlist
-    case liveStation
-
-    var id: String { rawValue }
-    var label: String {
-        switch self {
-        case .playlist:    return "Playlist"
-        case .liveStation: return "Live Station"
-        }
-    }
-}
-
 enum ArtworkSource: String, CaseIterable, Identifiable {
     case webdav
     case builtin
@@ -83,15 +70,6 @@ final class AppSettings {
     var coolStationName: String {
         didSet { UserDefaults.standard.set(coolStationName, forKey: "coolStationName") }
     }
-    var appleMusicMode: AppleMusicMode {
-        didSet { UserDefaults.standard.set(appleMusicMode.rawValue, forKey: "appleMusicMode") }
-    }
-    var appleMusicLiveStationID: String {
-        didSet { UserDefaults.standard.set(appleMusicLiveStationID, forKey: "appleMusicLiveStationID") }
-    }
-    var appleMusicLiveStationName: String {
-        didSet { UserDefaults.standard.set(appleMusicLiveStationName, forKey: "appleMusicLiveStationName") }
-    }
 
     var isConfigured: Bool {
         !serverURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -125,12 +103,6 @@ final class AppSettings {
 
         self.coolStationID = defaults.string(forKey: "coolStationID") ?? "wfmu"
         self.coolStationName = defaults.string(forKey: "coolStationName") ?? "WFMU"
-
-        let amModeRaw = defaults.string(forKey: "appleMusicMode") ?? ""
-        self.appleMusicMode = AppleMusicMode(rawValue: amModeRaw) ?? .playlist
-
-        self.appleMusicLiveStationID = defaults.string(forKey: "appleMusicLiveStationID") ?? ""
-        self.appleMusicLiveStationName = defaults.string(forKey: "appleMusicLiveStationName") ?? ""
     }
 
     func makeClient() -> WebDAVClient? {

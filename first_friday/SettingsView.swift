@@ -15,11 +15,21 @@ struct SettingsView: View {
     @Environment(AppSettings.self) private var settings
     @Environment(ImageIndex.self) private var index
 
-    @State private var serverURL: String = ""
-    @State private var username: String = ""
-    @State private var password: String = ""
-    @State private var radioURL: String = ""
-    @State private var playlistShuffle: Bool = false
+    @State private var didLoad = false
+
+    @State private var draftArtworkSource: ArtworkSource = .webdav
+    @State private var draftServerURL: String = ""
+    @State private var draftUsername: String = ""
+    @State private var draftPassword: String = ""
+    @State private var draftImageDuration: TimeInterval = 120
+    @State private var draftAudioMode: AudioMode = .coolStations
+    @State private var draftRadioURL: String = ""
+    @State private var draftCoolStationID: String = ""
+    @State private var draftCoolStationName: String = ""
+    @State private var draftPlaylistID: String = ""
+    @State private var draftPlaylistName: String = ""
+    @State private var draftPlaylistShuffle: Bool = false
+
     @State private var testing = false
     @State private var testResult: String?
 
@@ -33,21 +43,18 @@ struct SettingsView: View {
             NavigationStack {
                 Form {
                     Section("Artwork") {
-                        Picker("Source", selection: Binding(
-                            get: { settings.artworkSource },
-                            set: { settings.artworkSource = $0 }
-                        )) {
+                        Picker("Source", selection: $draftArtworkSource) {
                             ForEach(ArtworkSource.allCases) { Text($0.label).tag($0) }
                         }
                     }
 
-                    if settings.artworkSource == .webdav {
+                    if draftArtworkSource == .webdav {
                         Section {
-                            TextField("https://example.com/webdav/", text: $serverURL)
+                            TextField("https://example.com/webdav/", text: $draftServerURL)
                                 .textContentType(.URL)
-                            TextField("Username", text: $username)
+                            TextField("Username", text: $draftUsername)
                                 .textContentType(.username)
-                            SecureField("Password", text: $password)
+                            SecureField("Password", text: $draftPassword)
                                 .textContentType(.password)
                         } header: {
                             Text("WebDAV Server")
@@ -57,10 +64,7 @@ struct SettingsView: View {
                     }
 
                     Section("Slideshow") {
-                        Picker("Image Duration", selection: Binding(
-                            get: { settings.imageDuration },
-                            set: { settings.imageDuration = $0 }
-                        )) {
+                        Picker("Image Duration", selection: $draftImageDuration) {
                             Text("30 seconds").tag(TimeInterval(30))
                             Text("1 minute").tag(TimeInterval(60))
                             Text("2 minutes").tag(TimeInterval(120))
@@ -73,10 +77,10 @@ struct SettingsView: View {
                     Section("Audio") {
                         ForEach(AudioMode.allCases) { mode in
                             Button {
-                                settings.audioMode = mode
+                                draftAudioMode = mode
                             } label: {
                                 HStack {
-                                    Image(systemName: settings.audioMode == mode
+                                    Image(systemName: draftAudioMode == mode
                                           ? "largecircle.fill.circle"
                                           : "circle")
                                     Text(mode.label)
@@ -85,63 +89,40 @@ struct SettingsView: View {
                             }
                         }
 
-                        if settings.audioMode == .coolStations {
+                        if draftAudioMode == .radio {
+                            TextField("Stream URL", text: $draftRadioURL)
+                                .textContentType(.URL)
+                        }
+
+                        if draftAudioMode == .music {
                             NavigationLink {
-                                CoolStationPickerView()
+                                PlaylistPickerView(
+                                    selectedID: $draftPlaylistID,
+                                    selectedName: $draftPlaylistName
+                                )
+                            } label: {
+                                HStack {
+                                    Text("Playlist")
+                                    Spacer()
+                                    Text(draftPlaylistName.isEmpty ? "None" : draftPlaylistName)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                            Toggle("Shuffle", isOn: $draftPlaylistShuffle)
+                        }
+
+                        if draftAudioMode == .coolStations {
+                            NavigationLink {
+                                CoolStationPickerView(
+                                    selectedID: $draftCoolStationID,
+                                    selectedName: $draftCoolStationName
+                                )
                             } label: {
                                 HStack {
                                     Text("Station")
                                     Spacer()
-                                    Text(settings.coolStationName.isEmpty ? "None" : settings.coolStationName)
+                                    Text(draftCoolStationName.isEmpty ? "None" : draftCoolStationName)
                                         .foregroundStyle(.secondary)
-                                }
-                            }
-                        }
-
-                        if settings.audioMode == .radio {
-                            TextField("Stream URL", text: $radioURL)
-                                .textContentType(.URL)
-                        }
-
-                        if settings.audioMode == .music {
-                            ForEach(AppleMusicMode.allCases) { mode in
-                                Button {
-                                    settings.appleMusicMode = mode
-                                } label: {
-                                    HStack {
-                                        Image(systemName: settings.appleMusicMode == mode
-                                              ? "largecircle.fill.circle"
-                                              : "circle")
-                                        Text(mode.label)
-                                        Spacer()
-                                    }
-                                }
-                            }
-
-                            if settings.appleMusicMode == .playlist {
-                                NavigationLink {
-                                    PlaylistPickerView()
-                                } label: {
-                                    HStack {
-                                        Text("Playlist")
-                                        Spacer()
-                                        Text(settings.playlistName.isEmpty ? "None" : settings.playlistName)
-                                            .foregroundStyle(.secondary)
-                                    }
-                                }
-                                Toggle("Shuffle", isOn: $playlistShuffle)
-                            }
-
-                            if settings.appleMusicMode == .liveStation {
-                                NavigationLink {
-                                    AppleMusicLiveStationPickerView()
-                                } label: {
-                                    HStack {
-                                        Text("Live Station")
-                                        Spacer()
-                                        Text(settings.appleMusicLiveStationName.isEmpty ? "None" : settings.appleMusicLiveStationName)
-                                            .foregroundStyle(.secondary)
-                                    }
                                 }
                             }
                         }
@@ -155,7 +136,7 @@ struct SettingsView: View {
                         Button(testing ? "Testing…" : "Save") {
                             Task { await saveAndReload() }
                         }
-                        .disabled(testing || (settings.artworkSource == .webdav && serverURL.isEmpty))
+                        .disabled(testing || (draftArtworkSource == .webdav && draftServerURL.isEmpty))
 
                         if let onCancel {
                             Button("Cancel", action: onCancel)
@@ -164,11 +145,22 @@ struct SettingsView: View {
                 }
                 .navigationTitle("Settings")
                 .onAppear {
-                    serverURL = settings.serverURL
-                    username = settings.username
-                    password = settings.password
-                    radioURL = settings.radioURL
-                    playlistShuffle = settings.playlistShuffle
+                    // Load drafts from settings only on first appearance, not
+                    // on every re-appear (e.g. returning from a sub-picker).
+                    guard !didLoad else { return }
+                    didLoad = true
+                    draftArtworkSource = settings.artworkSource
+                    draftServerURL = settings.serverURL
+                    draftUsername = settings.username
+                    draftPassword = settings.password
+                    draftImageDuration = settings.imageDuration
+                    draftAudioMode = settings.audioMode
+                    draftRadioURL = settings.radioURL
+                    draftCoolStationID = settings.coolStationID
+                    draftCoolStationName = settings.coolStationName
+                    draftPlaylistID = settings.playlistID
+                    draftPlaylistName = settings.playlistName
+                    draftPlaylistShuffle = settings.playlistShuffle
                 }
             }
         }
@@ -178,11 +170,18 @@ struct SettingsView: View {
     private func saveAndReload() async {
         testing = true
         defer { testing = false }
-        settings.serverURL = serverURL.trimmingCharacters(in: .whitespacesAndNewlines)
-        settings.username = username
-        settings.password = password
-        settings.radioURL = radioURL.trimmingCharacters(in: .whitespacesAndNewlines)
-        settings.playlistShuffle = playlistShuffle
+        settings.artworkSource = draftArtworkSource
+        settings.serverURL = draftServerURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        settings.username = draftUsername
+        settings.password = draftPassword
+        settings.imageDuration = draftImageDuration
+        settings.audioMode = draftAudioMode
+        settings.radioURL = draftRadioURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        settings.coolStationID = draftCoolStationID
+        settings.coolStationName = draftCoolStationName
+        settings.playlistID = draftPlaylistID
+        settings.playlistName = draftPlaylistName
+        settings.playlistShuffle = draftPlaylistShuffle
 
         if settings.artworkSource == .builtin {
             await index.refresh(using: settings)
@@ -190,11 +189,10 @@ struct SettingsView: View {
             return
         }
 
-        guard let client = settings.makeClient() else {
+        guard settings.makeClient() != nil else {
             testResult = "Invalid URL"
             return
         }
-        _ = client
         await index.refresh(using: settings)
         if let err = index.lastError {
             testResult = "Error: \(err)"

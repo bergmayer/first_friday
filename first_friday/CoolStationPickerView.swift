@@ -1,16 +1,17 @@
 import SwiftUI
 
 struct CoolStationPickerView: View {
-    @Environment(AppSettings.self) private var settings
+    @Binding var selectedID: String
+    @Binding var selectedName: String
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         List {
-            if !settings.coolStationID.isEmpty {
+            if !selectedID.isEmpty {
                 Section {
                     Button("Clear selection") {
-                        settings.coolStationID = ""
-                        settings.coolStationName = ""
+                        selectedID = ""
+                        selectedName = ""
                         dismiss()
                     }
                 }
@@ -18,14 +19,14 @@ struct CoolStationPickerView: View {
             Section("Cool Stations") {
                 ForEach(CoolStations.all) { station in
                     Button {
-                        settings.coolStationID = station.id
-                        settings.coolStationName = station.name
+                        selectedID = station.id
+                        selectedName = station.name
                         dismiss()
                     } label: {
                         HStack {
                             Text(station.name)
                             Spacer()
-                            if station.id == settings.coolStationID {
+                            if station.id == selectedID {
                                 Image(systemName: "checkmark")
                             }
                         }

@@ -2,7 +2,8 @@ import SwiftUI
 import MusicKit
 
 struct PlaylistPickerView: View {
-    @Environment(AppSettings.self) private var settings
+    @Binding var selectedID: String
+    @Binding var selectedName: String
     @Environment(\.dismiss) private var dismiss
 
     @State private var playlists: [Playlist] = []
@@ -34,11 +35,11 @@ struct PlaylistPickerView: View {
                 }
             } else {
                 List {
-                    if !settings.playlistID.isEmpty {
+                    if !selectedID.isEmpty {
                         Section {
                             Button("Clear selection") {
-                                settings.playlistID = ""
-                                settings.playlistName = ""
+                                selectedID = ""
+                                selectedName = ""
                                 dismiss()
                             }
                         }
@@ -46,12 +47,14 @@ struct PlaylistPickerView: View {
                     Section("Your Playlists") {
                         ForEach(playlists, id: \.id) { playlist in
                             Button {
-                                select(playlist)
+                                selectedID = playlist.id.rawValue
+                                selectedName = playlist.name
+                                dismiss()
                             } label: {
                                 HStack {
                                     Text(playlist.name)
                                     Spacer()
-                                    if playlist.id.rawValue == settings.playlistID {
+                                    if playlist.id.rawValue == selectedID {
                                         Image(systemName: "checkmark")
                                     }
                                 }
@@ -77,11 +80,5 @@ struct PlaylistPickerView: View {
         } catch {
             errorMessage = error.localizedDescription
         }
-    }
-
-    private func select(_ playlist: Playlist) {
-        settings.playlistID = playlist.id.rawValue
-        settings.playlistName = playlist.name
-        dismiss()
     }
 }
