@@ -35,6 +35,10 @@ struct SlideshowView: View {
                     default:     break
                     }
                 }
+                .onTapGesture {
+                    guard !showFilename, !showSettings else { return }
+                    if currentImage != nil { showFilename = true }
+                }
 
             if showFilename, let img = currentImage {
                 FilenameOverlay(

@@ -10,7 +10,7 @@ struct FilenameOverlay: View {
     @State private var contentOpacity: Double = 1
     @State private var dismissTask: Task<Void, Never>?
 
-    private let holdDuration: TimeInterval = 2
+    private let holdDuration: TimeInterval = 5
     private let fadeDuration: TimeInterval = 1.5
 
     var body: some View {
