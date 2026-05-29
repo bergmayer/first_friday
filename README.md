@@ -26,7 +26,7 @@ The purpose of the app is to display your own collection of artwork, from a WebD
 
 On my home network, I host a collection of images sourced from Wikiart on a Raspberry Pi. It is not hard to set up, and for those that do not want to host their own artwork collections, there are plenty of other art gallery apps in the Apple TV app store.
 
-The app supports playing no music at all, of course.  It also integrates with Apple Music if that is configured on your Apple TV, offers some internet radio stations that I happen to like as pre-sets, and lets you put in your own radio station URL.
+The app supports playing no music at all, of course.  It also offers some internet radio stations that I happen to like as pre-sets, and lets you put in your own radio station URL.
 
 ## Controls
 

@@ -26,9 +26,6 @@ struct SettingsView: View {
     @State private var draftRadioURL: String = ""
     @State private var draftCoolStationID: String = ""
     @State private var draftCoolStationName: String = ""
-    @State private var draftPlaylistID: String = ""
-    @State private var draftPlaylistName: String = ""
-    @State private var draftPlaylistShuffle: Bool = false
 
     @State private var testing = false
     @State private var testResult: String?
@@ -94,23 +91,6 @@ struct SettingsView: View {
                                 .textContentType(.URL)
                         }
 
-                        if draftAudioMode == .music {
-                            NavigationLink {
-                                PlaylistPickerView(
-                                    selectedID: $draftPlaylistID,
-                                    selectedName: $draftPlaylistName
-                                )
-                            } label: {
-                                HStack {
-                                    Text("Playlist")
-                                    Spacer()
-                                    Text(draftPlaylistName.isEmpty ? "None" : draftPlaylistName)
-                                        .foregroundStyle(.secondary)
-                                }
-                            }
-                            Toggle("Shuffle", isOn: $draftPlaylistShuffle)
-                        }
-
                         if draftAudioMode == .coolStations {
                             NavigationLink {
                                 CoolStationPickerView(
@@ -158,9 +138,6 @@ struct SettingsView: View {
                     draftRadioURL = settings.radioURL
                     draftCoolStationID = settings.coolStationID
                     draftCoolStationName = settings.coolStationName
-                    draftPlaylistID = settings.playlistID
-                    draftPlaylistName = settings.playlistName
-                    draftPlaylistShuffle = settings.playlistShuffle
                 }
             }
         }
@@ -179,9 +156,6 @@ struct SettingsView: View {
         settings.radioURL = draftRadioURL.trimmingCharacters(in: .whitespacesAndNewlines)
         settings.coolStationID = draftCoolStationID
         settings.coolStationName = draftCoolStationName
-        settings.playlistID = draftPlaylistID
-        settings.playlistName = draftPlaylistName
-        settings.playlistShuffle = draftPlaylistShuffle
 
         if settings.artworkSource == .builtin {
             await index.refresh(using: settings)

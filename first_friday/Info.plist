@@ -24,8 +24,6 @@
 	<dict/>
 	<key>UIUserInterfaceStyle</key>
 	<string>Automatic</string>
-	<key>NSAppleMusicUsageDescription</key>
-	<string>First Friday uses Apple Music to play playlists alongside the slideshow.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>First Friday connects to your local WebDAV server to fetch artwork.</string>
 	<key>NSBonjourServices</key>

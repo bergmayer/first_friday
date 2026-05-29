@@ -4,7 +4,6 @@ import SwiftUI
 enum AudioMode: String, CaseIterable, Identifiable {
     case none
     case radio
-    case music
     case coolStations
 
     var id: String { rawValue }
@@ -12,7 +11,6 @@ enum AudioMode: String, CaseIterable, Identifiable {
         switch self {
         case .none:         return "No Music"
         case .radio:        return "Internet Radio URL"
-        case .music:        return "Apple Music"
         case .coolStations: return "Cool Stations"
         }
     }
@@ -46,15 +44,6 @@ final class AppSettings {
     var radioURL: String {
         didSet { UserDefaults.standard.set(radioURL, forKey: "radioURL") }
     }
-    var playlistID: String {
-        didSet { UserDefaults.standard.set(playlistID, forKey: "playlistID") }
-    }
-    var playlistName: String {
-        didSet { UserDefaults.standard.set(playlistName, forKey: "playlistName") }
-    }
-    var playlistShuffle: Bool {
-        didSet { UserDefaults.standard.set(playlistShuffle, forKey: "playlistShuffle") }
-    }
     var audioMode: AudioMode {
         didSet { UserDefaults.standard.set(audioMode.rawValue, forKey: "audioMode") }
     }
@@ -87,10 +76,6 @@ final class AppSettings {
             ?? env["WEBDAV_PASS"] ?? ""
 
         self.radioURL = defaults.string(forKey: "radioURL") ?? ""
-
-        self.playlistID = defaults.string(forKey: "playlistID") ?? ""
-        self.playlistName = defaults.string(forKey: "playlistName") ?? ""
-        self.playlistShuffle = defaults.bool(forKey: "playlistShuffle")
 
         let modeRaw = defaults.string(forKey: "audioMode") ?? ""
         self.audioMode = AudioMode(rawValue: modeRaw) ?? .coolStations
