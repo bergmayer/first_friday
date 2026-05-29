@@ -15,6 +15,7 @@ final class AudioPlayer {
     var mode: Mode = .stopped
     var nowPlaying: String?
 
+    private var stationName: String?
     private var radioPlayer: AVPlayer?
     private var radioMetadataOutput: AVPlayerItemMetadataOutput?
     private var radioMetadataDelegate: RadioMetadataDelegate?
@@ -28,10 +29,10 @@ final class AudioPlayer {
             break
         case .radio:
             let url = settings.radioURL.trimmingCharacters(in: .whitespacesAndNewlines)
-            if !url.isEmpty { startRadio(urlString: url) }
+            if !url.isEmpty { startRadio(urlString: url, name: nil) }
         case .coolStations:
             if let station = CoolStations.find(id: settings.coolStationID) {
-                startRadio(urlString: station.url)
+                startRadio(urlString: station.url, name: station.name)
             }
         case .music:
             let pid = settings.playlistID.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -52,11 +53,12 @@ final class AudioPlayer {
         if status == .playing || status == .paused {
             musicPlayer.stop()
         }
+        stationName = nil
         nowPlaying = nil
         mode = .stopped
     }
 
-    private func startRadio(urlString: String) {
+    private func startRadio(urlString: String, name: String?) {
         var s = urlString
         if !s.lowercased().hasPrefix("http") {
             s = "http://" + s
@@ -65,10 +67,17 @@ final class AudioPlayer {
             mode = .error("Invalid radio URL")
             return
         }
+        stationName = name
+        nowPlaying = name
         let item = AVPlayerItem(url: url)
         let output = AVPlayerItemMetadataOutput(identifiers: nil)
         let delegate = RadioMetadataDelegate { [weak self] value in
-            self?.nowPlaying = value
+            guard let self else { return }
+            if let value, !value.isEmpty {
+                self.nowPlaying = value
+            } else {
+                self.nowPlaying = self.stationName
+            }
         }
         output.setDelegate(delegate, queue: .main)
         item.add(output)

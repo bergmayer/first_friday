@@ -16,7 +16,7 @@ enum CoolStations {
         .init(id: "kcrw",      name: "KCRW",              url: "https://streams.kcrw.com/kcrw_mp3"),
         .init(id: "wprb",      name: "WPRB",              url: "https://wprb.streamguys1.com/listen.mp3"),
         .init(id: "wamu",      name: "WAMU",              url: "https://wamu.cdnstream1.com/wamu.mp3"),
-        .init(id: "weta",      name: "WETA Classical",    url: "https://playerservices.streamtheworld.com/api/livestream-redirect/WETAFM.mp3"),
+        .init(id: "weta",      name: "WETA Classical",    url: "https://weta.streamguys1.com/wetaclassical-icy"),
         .init(id: "radio1190", name: "Radio 1190",        url: "http://kvcu.streamguys1.com/live"),
         .init(id: "nts",       name: "NTS Radio 1",       url: "https://stream-relay-geo.ntslive.net/stream"),
         .init(id: "nts2",      name: "NTS Radio 2",       url: "https://stream-relay-geo.ntslive.net/stream2"),

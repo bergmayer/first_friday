@@ -87,6 +87,7 @@ struct SlideshowView: View {
             if currentImage == nil { await advance() }
             startTimer()
             await audio.start(settings: settings)
+            slideshowFocused = true
         }
         .onDisappear {
             UIApplication.shared.isIdleTimerDisabled = false
