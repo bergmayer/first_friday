@@ -54,6 +54,9 @@ struct SlideshowView: View {
             }
         }
         .animation(.easeInOut(duration: 0.25), value: showFilename)
+        .onPlayPauseCommand {
+            audio.togglePlayPause()
+        }
         .fullScreenCover(isPresented: $showSettings) {
             SettingsView(
                 onSave: {

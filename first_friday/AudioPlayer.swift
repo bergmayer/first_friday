@@ -43,6 +43,15 @@ final class AudioPlayer {
         mode = .stopped
     }
 
+    func togglePlayPause() {
+        guard let player = radioPlayer else { return }
+        if player.timeControlStatus == .playing {
+            player.pause()
+        } else {
+            player.play()
+        }
+    }
+
     private func startRadio(urlString: String, name: String?) {
         var s = urlString
         if !s.lowercased().hasPrefix("http") {
