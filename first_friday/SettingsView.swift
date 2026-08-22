@@ -21,7 +21,7 @@ struct SettingsView: View {
     @State private var draftServerURL: String = ""
     @State private var draftUsername: String = ""
     @State private var draftPassword: String = ""
-    @State private var draftImageDuration: TimeInterval = 120
+    @State private var draftImageDuration: TimeInterval = 420
     @State private var draftAudioMode: AudioMode = .coolStations
     @State private var draftRadioURL: String = ""
     @State private var draftCoolStationID: String = ""
@@ -66,13 +66,14 @@ struct SettingsView: View {
                             Text("1 minute").tag(TimeInterval(60))
                             Text("2 minutes").tag(TimeInterval(120))
                             Text("5 minutes").tag(TimeInterval(300))
+                            Text("7 minutes").tag(TimeInterval(420))
                             Text("10 minutes").tag(TimeInterval(600))
                             Text("30 minutes").tag(TimeInterval(1800))
                         }
                     }
 
                     Section("Audio") {
-                        ForEach(AudioMode.allCases) { mode in
+                        ForEach([AudioMode.none, .coolStations, .radio]) { mode in
                             Button {
                                 draftAudioMode = mode
                             } label: {

@@ -9,9 +9,9 @@ enum AudioMode: String, CaseIterable, Identifiable {
     var id: String { rawValue }
     var label: String {
         switch self {
-        case .none:         return "No Music"
-        case .radio:        return "Internet Radio URL"
-        case .coolStations: return "Cool Stations"
+        case .none:         return "No music"
+        case .radio:        return "Custom URL"
+        case .coolStations: return "Stations"
         }
     }
 }
@@ -81,7 +81,7 @@ final class AppSettings {
         self.audioMode = AudioMode(rawValue: modeRaw) ?? .coolStations
 
         let storedDuration = defaults.double(forKey: "imageDuration")
-        self.imageDuration = storedDuration > 0 ? storedDuration : 120
+        self.imageDuration = storedDuration > 0 ? storedDuration : 420
 
         let sourceRaw = defaults.string(forKey: "artworkSource") ?? ""
         self.artworkSource = ArtworkSource(rawValue: sourceRaw) ?? .webdav

@@ -13,12 +13,14 @@
 
 In many cities the first Friday of every month is gallery night: art venues stay open late and people walk between them. Sometimes there is music.
 
-This is not a monthly fun art event.  It is tvOS app: a BYO art-gallery-and-music app for Apple TV. 
+This is not a monthly fun art event. It is a BYO art-gallery-and-music app for Apple TV, Mac, and Android.
 
 
 ## Installation
 
 Download the source code, compile it, and install it on your own Apple TV from Xcode. (Or just vibe code your own equivalent.  This whole app was maybe 2 hours of work.) Pain in the butt, huh?  Apple needs to allow for more ad-hoc distribution of apps.
+
+The Android project is in [`android/`](android/). Open that directory in Android Studio, or run `cd android && ./gradlew assembleDebug`. On first launch, enter a WebDAV URL and optional credentials.
 
 ## Setup
 
@@ -36,6 +38,14 @@ During the slideshow:
 - **Up** — show overlay with the now-playing track and the filename/path of the current image
 - **Click while overlay is up** — open Settings
 - **Any other button while overlay is up** — dismiss
+
+On Android:
+
+- **Tap** — show or hide the WebDAV-relative file path, now-playing information, and play/pause control for five seconds
+- **Swipe left** — move forward to another random image
+- **Swipe right** — move back through viewing history
+- **Long press** — open settings for WebDAV, music, station, custom stream URL, and artwork duration
+- Artwork defaults to seven minutes and can be set from 30 seconds to 30 minutes; the screen stays awake while the app is open
 
 I'd like better metadata but full paths/filenames (e.g. High_Renaissance/dosso-dossi_jupiter-mercury-and-virtue-1524.jpg) is the best I can do.
 

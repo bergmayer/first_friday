@@ -17,3 +17,11 @@ Packages/
 Package.pins
 Package.resolved
 *.xcodeproj/project.xcworkspace/xcuserdata/
+
+# Android / Gradle
+.gradle/
+.idea/
+local.properties
+**/build/
+*.apk
+*.aab

@@ -12,6 +12,7 @@ final class AudioPlayer {
 
     var mode: Mode = .stopped
     var nowPlaying: String?
+    var isPlaying = false
 
     private var stationName: String?
     private var radioPlayer: AVPlayer?
@@ -40,6 +41,7 @@ final class AudioPlayer {
         radioMetadataDelegate = nil
         stationName = nil
         nowPlaying = nil
+        isPlaying = false
         mode = .stopped
     }
 
@@ -47,8 +49,10 @@ final class AudioPlayer {
         guard let player = radioPlayer else { return }
         if player.timeControlStatus == .playing {
             player.pause()
+            isPlaying = false
         } else {
             player.play()
+            isPlaying = true
         }
     }
 
@@ -77,6 +81,7 @@ final class AudioPlayer {
         item.add(output)
         let player = AVPlayer(playerItem: item)
         player.play()
+        isPlaying = true
         radioPlayer = player
         radioMetadataOutput = output
         radioMetadataDelegate = delegate

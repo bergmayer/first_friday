@@ -3,10 +3,15 @@ import SwiftUI
 struct FilenameOverlay: View {
     let image: WebDAVImage
     let nowPlaying: String?
+    let isAudioAvailable: Bool
+    let isAudioPlaying: Bool
+    let onToggleAudio: () -> Void
     let onResume: () -> Void
     let onChangeServer: () -> Void
 
-    @FocusState private var focused: Bool
+    private enum OverlayAction: Hashable { case music, settings }
+
+    @FocusState private var focusedAction: OverlayAction?
     @State private var contentOpacity: Double = 1
     @State private var dismissTask: Task<Void, Never>?
 
@@ -26,7 +31,7 @@ struct FilenameOverlay: View {
                     .minimumScaleFactor(0.4)
                     .shadow(color: .black.opacity(0.6), radius: 12, y: 4)
 
-                if let nowPlaying, !nowPlaying.isEmpty {
+                if isAudioPlaying, let nowPlaying, !nowPlaying.isEmpty {
                     HStack(spacing: 18) {
                         Image(systemName: "music.note")
                         Text(nowPlaying)
@@ -39,9 +44,22 @@ struct FilenameOverlay: View {
                     .shadow(color: .black.opacity(0.6), radius: 10, y: 3)
                 }
 
-                Text("click for settings")
-                    .font(.system(size: 26, weight: .regular, design: .rounded))
-                    .foregroundStyle(.white.opacity(0.5))
+                HStack(spacing: 30) {
+                    if isAudioAvailable {
+                        Button(isAudioPlaying ? "Pause Music" : "Play Music") {
+                            onToggleAudio()
+                            scheduleAutoDismiss()
+                        }
+                        .focused($focusedAction, equals: .music)
+                    }
+
+                    Button("Settings") {
+                        dismissTask?.cancel()
+                        onChangeServer()
+                    }
+                    .focused($focusedAction, equals: .settings)
+                }
+                .font(.system(size: 30, weight: .semibold, design: .rounded))
             }
             .padding(.vertical, 80)
             .padding(.horizontal, 120)
@@ -56,23 +74,12 @@ struct FilenameOverlay: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .contentShape(Rectangle())
         .opacity(contentOpacity)
-        .focusable(true)
-        .focused($focused)
-        .focusEffectDisabled()
-        .onTapGesture {
-            dismissTask?.cancel()
-            onChangeServer()
-        }
-        .onMoveCommand { _ in
-            dismissTask?.cancel()
-            onResume()
-        }
         .onExitCommand {
             dismissTask?.cancel()
             onResume()
         }
         .onAppear {
-            Task { @MainActor in focused = true }
+            Task { @MainActor in focusedAction = .settings }
             scheduleAutoDismiss()
         }
         .onDisappear {

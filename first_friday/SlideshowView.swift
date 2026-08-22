@@ -44,6 +44,9 @@ struct SlideshowView: View {
                 FilenameOverlay(
                     image: img,
                     nowPlaying: audio.nowPlaying,
+                    isAudioAvailable: audio.mode == .radio,
+                    isAudioPlaying: audio.isPlaying,
+                    onToggleAudio: audio.togglePlayPause,
                     onResume: { showFilename = false },
                     onChangeServer: {
                         showFilename = false
