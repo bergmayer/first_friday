@@ -5,8 +5,8 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
@@ -30,6 +31,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -142,7 +144,18 @@ private fun GalleryScreen(
                     onDragCancel = { horizontalDrag = 0f },
                 )
             }
-            .combinedClickable(onClick = onTap, onLongClick = onLongPress),
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onTap = { position ->
+                        when (galleryTapAction(position.x, size.width)) {
+                            GalleryTapAction.Back -> onSwipeBack()
+                            GalleryTapAction.Overlay -> onTap()
+                            GalleryTapAction.Forward -> onSwipeForward()
+                        }
+                    },
+                    onLongPress = { onLongPress() },
+                )
+            },
     ) {
         state.bitmap?.let { bitmap ->
             Image(
@@ -260,17 +273,68 @@ private fun SetupScreen(
     var audioMode by remember(state.setupAudioMode) { mutableStateOf(state.setupAudioMode) }
     var stationId by remember(state.setupStationId) { mutableStateOf(state.setupStationId) }
     var radioUrl by remember(state.setupRadioUrl) { mutableStateOf(state.setupRadioUrl) }
+    val submitSettings = {
+        onConnect(
+            SettingsDraft(
+                serverUrl = serverUrl,
+                username = username,
+                password = password,
+                imageDurationMillis = imageDurationMillis,
+                audioMode = audioMode,
+                stationId = stationId,
+                radioUrl = radioUrl,
+            ),
+        )
+    }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 28.dp, vertical = 22.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
+    Scaffold(
+        containerColor = Color.Black,
+        topBar = {
+            Surface(color = Color.Black, tonalElevation = 6.dp) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 28.dp, vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        if (state.setupCanCancel) "Settings" else "First Friday",
+                        color = Color.White,
+                        fontSize = 28.sp,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Button(
+                        onClick = submitSettings,
+                        enabled = serverUrl.isNotBlank() && !state.isConnecting,
+                    ) {
+                        Text(
+                            when {
+                                state.isConnecting -> "Testing…"
+                                state.setupCanCancel -> "Done"
+                                else -> "Connect"
+                            },
+                        )
+                    }
+                    if (state.setupCanCancel) {
+                        Spacer(Modifier.width(12.dp))
+                        OutlinedButton(onClick = onCancel, enabled = !state.isConnecting) {
+                            Text("Cancel")
+                        }
+                    }
+                }
+            }
+        },
     ) {
-        Column(modifier = Modifier.fillMaxWidth().widthIn(max = 620.dp)) {
-            Text("First Friday", color = Color.White, fontSize = 32.sp)
-            Spacer(Modifier.height(8.dp))
+        contentPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(contentPadding)
+                .padding(horizontal = 28.dp, vertical = 22.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Column(modifier = Modifier.fillMaxWidth().widthIn(max = 620.dp)) {
             Text(
                 "Choose an artwork library, slideshow timing, and music.",
                 color = Color.White.copy(alpha = 0.72f),
@@ -354,36 +418,12 @@ private fun SetupScreen(
                 Text(it, color = MaterialTheme.colorScheme.error)
             }
             Spacer(Modifier.height(22.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Button(
-                    onClick = {
-                        onConnect(
-                            SettingsDraft(
-                                serverUrl = serverUrl,
-                                username = username,
-                                password = password,
-                                imageDurationMillis = imageDurationMillis,
-                                audioMode = audioMode,
-                                stationId = stationId,
-                                radioUrl = radioUrl,
-                            ),
-                        )
-                    },
-                    enabled = serverUrl.isNotBlank() && !state.isConnecting,
-                ) {
-                    Text(if (state.isConnecting) "Testing…" else "Save & Test")
-                }
-                if (state.setupCanCancel) {
-                    OutlinedButton(onClick = onCancel, enabled = !state.isConnecting) {
-                        Text("Cancel")
-                    }
-                }
-            }
-            Spacer(Modifier.height(20.dp))
             Text(
-                "In the gallery: tap for details and music controls, swipe left for the next work, swipe right to go back, or hold for settings.",
+                "In the gallery: tap the left or right third to move through artwork, tap the center for details and music controls, swipe in either direction, or hold for settings.",
                 color = Color.White.copy(alpha = 0.55f),
             )
+            Spacer(Modifier.height(20.dp))
+            }
         }
     }
 }

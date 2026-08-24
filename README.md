@@ -41,7 +41,9 @@ During the slideshow:
 
 On Android:
 
-- **Tap** — show or hide the WebDAV-relative file path, now-playing information, and play/pause control for five seconds
+- **Tap the left third** — move back through viewing history
+- **Tap the center third** — show or hide the WebDAV-relative file path, now-playing information, and play/pause control for five seconds
+- **Tap the right third** — move forward to another random image
 - **Swipe left** — move forward to another random image
 - **Swipe right** — move back through viewing history
 - **Long press** — open settings for WebDAV, music, station, custom stream URL, and artwork duration

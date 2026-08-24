@@ -128,6 +128,29 @@ class GalleryViewModel(application: Application) : AndroidViewModel(application)
                 }
                 return@launch
             }
+            val previous = settings
+            val artworkSourceIsUnchanged = previous != null &&
+                previous.serverUrl == candidate.serverUrl &&
+                previous.username == candidate.username &&
+                previous.password == candidate.password &&
+                images.isNotEmpty()
+            if (artworkSourceIsUnchanged) {
+                repository.saveSettings(candidate)
+                settings = candidate
+                if (appInForeground && previous.audioConfigurationDiffersFrom(candidate)) {
+                    radioPlayer.start(candidate)
+                }
+                _state.update {
+                    it.copy(
+                        screen = Screen.Gallery,
+                        isConnecting = false,
+                        message = null,
+                        metadataVisible = false,
+                    )
+                }
+                scheduleSlideshow()
+                return@launch
+            }
             val candidateClient = WebDavClient(candidate)
             runCatching { candidateClient.listAllImages() }
                 .onSuccess { result ->
@@ -381,6 +404,9 @@ class GalleryViewModel(application: Application) : AndroidViewModel(application)
             nextArtwork()
         }
     }
+
+    private fun ServerSettings.audioConfigurationDiffersFrom(other: ServerSettings): Boolean =
+        audioMode != other.audioMode || stationId != other.stationId || radioUrl != other.radioUrl
 
     override fun onCleared() {
         radioPlayer.release()
