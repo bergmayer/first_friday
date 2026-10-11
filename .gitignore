@@ -25,3 +25,6 @@ local.properties
 **/build/
 *.apk
 *.aab
+
+# Kotlin compiler session caches
+.kotlin/

@@ -40,6 +40,28 @@ class WebDavClient(
         )
     }
 
+    suspend fun metadata(url: String): String? = withContext(Dispatchers.IO) {
+        try {
+            val imageUri = URI(url)
+            val uri = URI(imageUri.scheme, imageUri.authority, imageUri.path + ".yaml", imageUri.query, null)
+            requireSameOrigin(uri)
+            val request = Request.Builder().url(uri.toASCIIString())
+                .header("Authorization", authorization).get().build()
+            val call = httpClient.newCall(request)
+            call.timeout().timeout(8, TimeUnit.SECONDS)
+            call.execute().use { response ->
+                if (!response.isSuccessful) return@withContext null
+                // Read at most the metadata size limit, even if Content-Length is absent.
+                val source = response.body.source()
+                source.request(64 * 1024 + 1L)
+                if (source.buffer.size > 64 * 1024) return@withContext null
+                ArtworkMetadata.displayText(source.readUtf8())
+            }
+        } catch (_: IOException) {
+            null
+        }
+    }
+
     private fun walk(
         uri: URI,
         relativePath: String,

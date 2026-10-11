@@ -160,7 +160,7 @@ private fun GalleryScreen(
         state.bitmap?.let { bitmap ->
             Image(
                 bitmap = bitmap.asImageBitmap(),
-                contentDescription = state.currentArtwork?.displayPath,
+                contentDescription = state.artworkMetadata ?: state.currentArtwork?.displayPath,
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Fit,
             )
@@ -185,7 +185,7 @@ private fun GalleryScreen(
                     .padding(horizontal = 26.dp, vertical = 20.dp),
             ) {
                 Text(
-                    text = state.currentArtwork?.displayPath.orEmpty(),
+                    text = state.artworkMetadata ?: state.currentArtwork?.displayPath.orEmpty(),
                     color = Color.White,
                     fontSize = 24.sp,
                     textAlign = TextAlign.Center,

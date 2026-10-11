@@ -6,6 +6,15 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+        FFA000000000000000000001 = {isa = PBXBuildFile; productRef = FFA000000000000000000002; };
+/* End PBXBuildFile section */
+/* Begin XCRemoteSwiftPackageReference section */
+        FFA000000000000000000003 = {isa = XCRemoteSwiftPackageReference; repositoryURL = "https://github.com/jpsim/Yams.git"; requirement = {kind = upToNextMajorVersion; minimumVersion = 6.2.2; }; };
+/* End XCRemoteSwiftPackageReference section */
+/* Begin XCSwiftPackageProductDependency section */
+        FFA000000000000000000002 = {isa = XCSwiftPackageProductDependency; package = FFA000000000000000000003; productName = Yams; };
+/* End XCSwiftPackageProductDependency section */
 /* Begin PBXFileReference section */
 		312C38D52FBA9C3100A8FC00 /* first_friday.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = first_friday.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -36,6 +45,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+                FFA000000000000000000001,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -78,6 +88,7 @@
 			);
 			name = first_friday;
 			packageProductDependencies = (
+                FFA000000000000000000002,
 			);
 			productName = first_friday;
 			productReference = 312C38D52FBA9C3100A8FC00 /* first_friday.app */;
@@ -88,6 +99,7 @@
 /* Begin PBXProject section */
 		312C38CD2FBA9C3100A8FC00 /* Project object */ = {
 			isa = PBXProject;
+            packageReferences = (FFA000000000000000000003);
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 2650;

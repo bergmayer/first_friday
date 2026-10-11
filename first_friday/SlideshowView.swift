@@ -9,6 +9,7 @@ struct SlideshowView: View {
     @State private var historyIndex: Int = -1
     @State private var currentUIImage: UIImage?
     @State private var timer: Timer?
+    @State private var metadataText: String?
     @State private var showFilename = false
     @State private var showSettings = false
     @State private var audio = AudioPlayer()
@@ -22,8 +23,18 @@ struct SlideshowView: View {
 
     var body: some View {
         ZStack {
-            slideshowBase
-                .focusable(!showFilename && !showSettings)
+            // Keep the screen opaque even when tvOS changes the button's appearance.
+            Color.black.ignoresSafeArea()
+
+            Button(action: showControls) {
+                slideshowBase
+            }
+                .buttonStyle(.plain)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .ignoresSafeArea()
+                .accessibilityLabel("Artwork controls")
+                .accessibilityHint("Press Select for Settings and music controls, or press Down to open Settings")
+                .disabled(showFilename || showSettings)
                 .focused($slideshowFocused)
                 .focusEffectDisabled()
                 .onMoveCommand { direction in
@@ -31,32 +42,31 @@ struct SlideshowView: View {
                     switch direction {
                     case .right: Task { await advance() }
                     case .left:  Task { await goBack() }
-                    case .up:    if currentImage != nil { showFilename = true }
+                    case .up:    showControls()
+                    case .down:  openSettings()
                     default:     break
                     }
-                }
-                .onTapGesture {
-                    guard !showFilename, !showSettings else { return }
-                    if currentImage != nil { showFilename = true }
                 }
 
             if showFilename, let img = currentImage {
                 FilenameOverlay(
                     image: img,
+                    metadataText: metadataText,
                     nowPlaying: audio.nowPlaying,
                     isAudioAvailable: audio.mode == .radio,
                     isAudioPlaying: audio.isPlaying,
                     onToggleAudio: audio.togglePlayPause,
                     onResume: { showFilename = false },
-                    onChangeServer: {
-                        showFilename = false
-                        showSettings = true
-                    }
+                    onChangeServer: openSettings
                 )
                 .transition(.opacity)
             }
         }
         .animation(.easeInOut(duration: 0.25), value: showFilename)
+        .onExitCommand {
+            guard !showFilename, !showSettings else { return }
+            showControls()
+        }
         .onPlayPauseCommand {
             audio.togglePlayPause()
         }
@@ -73,19 +83,23 @@ struct SlideshowView: View {
             if showing {
                 timer?.invalidate()
             } else {
-                startTimer()
-                Task { @MainActor in slideshowFocused = true }
+                if !showSettings { startTimer() }
+                Task { @MainActor in slideshowFocused = !showSettings }
             }
         }
         .onChange(of: showSettings) { _, showing in
             if showing {
                 timer?.invalidate()
             } else {
+                startTimer()
                 Task { @MainActor in slideshowFocused = true }
             }
         }
         .onChange(of: settings.imageDuration) { _, _ in
             if !showFilename && !showSettings { startTimer() }
+        }
+        .onAppear {
+            slideshowFocused = !showFilename && !showSettings
         }
         .task {
             UIApplication.shared.isIdleTimerDisabled = true
@@ -93,7 +107,15 @@ struct SlideshowView: View {
             if currentImage == nil { await advance() }
             startTimer()
             await audio.start(settings: settings)
-            slideshowFocused = true
+            slideshowFocused = !showFilename && !showSettings
+        }
+        .task(id: currentImage?.url) {
+            metadataText = nil
+            guard let image = currentImage, !image.url.isFileURL,
+                  settings.artworkSource == .webdav, let client = settings.makeClient() else { return }
+            let text = await client.metadata(for: image.url)
+            guard !Task.isCancelled, currentImage?.url == image.url else { return }
+            metadataText = text
         }
         .onDisappear {
             UIApplication.shared.isIdleTimerDisabled = false
@@ -105,13 +127,12 @@ struct SlideshowView: View {
     @ViewBuilder
     private var slideshowBase: some View {
         ZStack {
-            Color.black.ignoresSafeArea()
+            Color.black
 
             if let ui = currentUIImage {
                 Image(uiImage: ui)
                     .resizable()
                     .scaledToFit()
-                    .ignoresSafeArea()
                     .id(currentImage?.url.absoluteString)
                     .transition(.opacity)
             } else if index.isLoading {
@@ -126,15 +147,31 @@ struct SlideshowView: View {
                         .font(.title2)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 200)
-                    Button("Change Server") { showSettings = true }
+                    Text("Press Select or Down to open Settings")
+                        .foregroundStyle(.white)
                 }
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .animation(.easeInOut(duration: 0.6), value: currentUIImage)
+    }
+
+    private func showControls() {
+        if currentImage != nil {
+            showFilename = true
+        } else {
+            openSettings()
+        }
+    }
+
+    private func openSettings() {
+        showSettings = true
+        showFilename = false
     }
 
     private func startTimer() {
         timer?.invalidate()
+        guard !showFilename, !showSettings else { return }
         timer = Timer.scheduledTimer(withTimeInterval: settings.imageDuration, repeats: true) { _ in
             Task { @MainActor in await advance() }
         }

@@ -20,6 +20,7 @@ enum WebDAVError: Error, LocalizedError {
 }
 
 actor WebDAVClient {
+    private let session: URLSession
     let baseURL: URL
     private let authHeader: String
 
@@ -27,7 +28,8 @@ actor WebDAVClient {
         "jpg", "jpeg", "png", "gif", "heic", "heif", "webp", "bmp", "tiff", "tif"
     ]
 
-    init(baseURL: URL, username: String, password: String) {
+    init(baseURL: URL, username: String, password: String, session: URLSession = .shared) {
+        self.session = session
         self.baseURL = baseURL
         let creds = Data("\(username):\(password)".utf8).base64EncodedString()
         self.authHeader = "Basic \(creds)"
@@ -42,9 +44,19 @@ actor WebDAVClient {
     func downloadImage(at url: URL) async throws -> Data {
         var request = URLRequest(url: url)
         request.setValue(authHeader, forHTTPHeaderField: "Authorization")
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await session.data(for: request)
         try Self.validate(response)
         return data
+    }
+
+    func metadata(for url: URL) async -> String? {
+        var request = URLRequest(url: url.appendingPathExtension("yaml"))
+        request.timeoutInterval = 8
+        request.setValue(authHeader, forHTTPHeaderField: "Authorization")
+        guard let (data, response) = try? await session.data(for: request),
+              let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode)
+        else { return nil }
+        return ArtworkMetadata.displayText(from: data)
     }
 
     private func walk(url: URL, relativePath: String, into images: inout [WebDAVImage]) async throws {
@@ -75,7 +87,7 @@ actor WebDAVClient {
         <propfind xmlns="DAV:"><prop><resourcetype/></prop></propfind>
         """#.utf8)
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await session.data(for: request)
         try Self.validate(response)
         return try MultiStatusParser.parse(data: data, requestedURL: url)
     }

@@ -35,21 +35,37 @@ The app supports playing no music at all, of course.  It also offers some intern
 During the slideshow:
 
 - **Left / Right** — previous / next image
-- **Up** — show overlay with the now-playing track and the filename/path of the current image
-- **Click while overlay is up** — open Settings
-- **Any other button while overlay is up** — dismiss
+- **Up or Select (click the clickpad)** — show artwork/music controls, with Settings focused
+- **Down** — open Settings directly, including while artwork is loading or unavailable
+- **Back/Menu during the slideshow** — show controls
+- **Left / Right in controls** — move focus between Resume Slideshow, music, and Settings; Select activates the focused button
+- **Back/Menu in controls** — resume the slideshow
+
+Controls remain visible until dismissed. Up/Down can be clickpad directional presses or directional swipes recognized by tvOS; no touch-only swipe is required. Closing Settings restores slideshow focus and the artwork timer.
 
 On Android:
 
 - **Tap the left third** — move back through viewing history
-- **Tap the center third** — show or hide the WebDAV-relative file path, now-playing information, and play/pause control for five seconds
+- **Tap the center third** — show or hide the painting metadata, now-playing information, and play/pause control for five seconds
 - **Tap the right third** — move forward to another random image
 - **Swipe left** — move forward to another random image
 - **Swipe right** — move back through viewing history
 - **Long press** — open settings for WebDAV, music, station, custom stream URL, and artwork duration
 - Artwork defaults to seven minutes and can be set from 30 seconds to 30 minutes; the screen stays awake while the app is open
 
-I'd like better metadata but full paths/filenames (e.g. High_Renaissance/dosso-dossi_jupiter-mercury-and-virtue-1524.jpg) is the best I can do.
+Artwork metadata comes from a YAML sidecar beside each image: `painting.jpg.yaml` for `painting.jpg`. Apple TV, Android, and the Mac version embedded in Viewport display `title`, `artist`, `date` (or `year`), `style`, and `genre`. Empty fields are omitted. Sidecars load on demand without delaying the artwork or scanning the entire metadata library; missing or invalid metadata falls back to the image path. Existing cached image indexes work without a rescan.
+
+```yaml
+title: "The Ghent Altar (detail)"
+artist: "Jan van Eyck"
+year: 1432
+style: "Northern Renaissance"
+genre: "religious painting"
+```
+
+The Mac implementation lives in the separate `viewport` project. All versions select artwork using an image-extension allowlist, so `.yaml` and `.yml` files are never slideshow candidates.
+
+Metadata and WebDAV regression tests run with `swift test` at this project's root and in `viewport`, and with `cd android && ./gradlew testDebugUnitTest`. The listing tests mix images, sidecars, and other files in nested directories.
 
 ## Built-in Stuff
 

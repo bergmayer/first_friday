@@ -30,6 +30,7 @@ data class GalleryUiState(
     val bitmap: Bitmap? = null,
     val currentArtwork: Artwork? = null,
     val metadataVisible: Boolean = false,
+    val artworkMetadata: String? = null,
     val message: String? = null,
     val setupServerUrl: String = "",
     val setupUsername: String = "",
@@ -338,9 +339,11 @@ class GalleryViewModel(application: Application) : AndroidViewModel(application)
                         screen = Screen.Gallery,
                         bitmap = bitmap,
                         currentArtwork = artwork,
+                        artworkMetadata = null,
                         message = null,
                     )
                 }
+                loadMetadata(activeClient, artwork, requestNumber)
                 history.record(artwork)
                 scheduleSlideshow()
                 return@launch
@@ -380,10 +383,21 @@ class GalleryViewModel(application: Application) : AndroidViewModel(application)
                     screen = Screen.Gallery,
                     bitmap = bitmap,
                     currentArtwork = artwork,
+                    artworkMetadata = null,
                     message = null,
                 )
             }
+            loadMetadata(activeClient, artwork, requestNumber)
             scheduleSlideshow()
+        }
+    }
+
+    private fun loadMetadata(activeClient: WebDavClient, artwork: Artwork, requestNumber: Long) {
+        viewModelScope.launch {
+            val text = activeClient.metadata(artwork.url)
+            if (requestNumber == imageRequestNumber && client === activeClient) {
+                _state.update { it.copy(artworkMetadata = text) }
+            }
         }
     }
 

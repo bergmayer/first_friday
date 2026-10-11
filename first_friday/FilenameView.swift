@@ -2,6 +2,7 @@ import SwiftUI
 
 struct FilenameOverlay: View {
     let image: WebDAVImage
+    let metadataText: String?
     let nowPlaying: String?
     let isAudioAvailable: Bool
     let isAudioPlaying: Bool
@@ -9,25 +10,19 @@ struct FilenameOverlay: View {
     let onResume: () -> Void
     let onChangeServer: () -> Void
 
-    private enum OverlayAction: Hashable { case music, settings }
+    private enum OverlayAction: Hashable { case music, settings, resume }
 
     @FocusState private var focusedAction: OverlayAction?
-    @State private var contentOpacity: Double = 1
-    @State private var dismissTask: Task<Void, Never>?
-
-    private let holdDuration: TimeInterval = 5
-    private let fadeDuration: TimeInterval = 1.5
-
     var body: some View {
         ZStack {
             Color.black.opacity(0.15).ignoresSafeArea()
 
             VStack(spacing: 50) {
-                Text(image.displayPath)
+                Text(metadataText ?? image.displayPath)
                     .font(.system(size: 80, weight: .semibold, design: .rounded))
                     .foregroundStyle(.white)
                     .multilineTextAlignment(.center)
-                    .lineLimit(4)
+                    .lineLimit(8)
                     .minimumScaleFactor(0.4)
                     .shadow(color: .black.opacity(0.6), radius: 12, y: 4)
 
@@ -45,16 +40,17 @@ struct FilenameOverlay: View {
                 }
 
                 HStack(spacing: 30) {
+                    Button("Resume Slideshow", action: onResume)
+                        .focused($focusedAction, equals: .resume)
+
                     if isAudioAvailable {
                         Button(isAudioPlaying ? "Pause Music" : "Play Music") {
                             onToggleAudio()
-                            scheduleAutoDismiss()
                         }
                         .focused($focusedAction, equals: .music)
                     }
 
                     Button("Settings") {
-                        dismissTask?.cancel()
                         onChangeServer()
                     }
                     .focused($focusedAction, equals: .settings)
@@ -73,31 +69,9 @@ struct FilenameOverlay: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .contentShape(Rectangle())
-        .opacity(contentOpacity)
-        .onExitCommand {
-            dismissTask?.cancel()
-            onResume()
-        }
+        .onExitCommand(perform: onResume)
         .onAppear {
-            Task { @MainActor in focusedAction = .settings }
-            scheduleAutoDismiss()
-        }
-        .onDisappear {
-            dismissTask?.cancel()
-        }
-    }
-
-    private func scheduleAutoDismiss() {
-        dismissTask?.cancel()
-        contentOpacity = 1
-        withAnimation(.linear(duration: fadeDuration).delay(holdDuration)) {
-            contentOpacity = 0
-        }
-        let total = holdDuration + fadeDuration
-        dismissTask = Task { @MainActor in
-            try? await Task.sleep(for: .seconds(total))
-            guard !Task.isCancelled else { return }
-            onResume()
+            focusedAction = .settings
         }
     }
 }
