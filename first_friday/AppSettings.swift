@@ -50,6 +50,9 @@ final class AppSettings {
     var imageDuration: TimeInterval {
         didSet { UserDefaults.standard.set(imageDuration, forKey: "imageDuration") }
     }
+    var alwaysShowInfo: Bool {
+        didSet { UserDefaults.standard.set(alwaysShowInfo, forKey: "alwaysShowInfo") }
+    }
     var artworkSource: ArtworkSource {
         didSet { UserDefaults.standard.set(artworkSource.rawValue, forKey: "artworkSource") }
     }
@@ -82,6 +85,8 @@ final class AppSettings {
 
         let storedDuration = defaults.double(forKey: "imageDuration")
         self.imageDuration = storedDuration > 0 ? storedDuration : 420
+
+        self.alwaysShowInfo = defaults.bool(forKey: "alwaysShowInfo")
 
         let sourceRaw = defaults.string(forKey: "artworkSource") ?? ""
         self.artworkSource = ArtworkSource(rawValue: sourceRaw) ?? .webdav

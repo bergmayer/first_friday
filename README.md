@@ -35,11 +35,14 @@ The app supports playing no music at all, of course.  It also offers some intern
 During the slideshow:
 
 - **Left / Right** — previous / next image
-- **Up or Select (click the clickpad)** — show artwork/music controls, with Settings focused
-- **Down** — open Settings directly, including while artwork is loading or unavailable
+- **Select (click the clickpad)** — show artwork/music controls, with Settings focused; open Settings directly if no artwork is displayed
+- **Up** — move the persistent info overlay to the next corner when enabled; otherwise show controls
+- **Down** — show or hide the persistent info overlay; this also updates Always Show Info in Settings
 - **Back/Menu during the slideshow** — show controls
 - **Left / Right in controls** — move focus between Resume Slideshow, music, and Settings; Select activates the focused button
 - **Back/Menu in controls** — resume the slideshow
+
+Enable **Always Show Info** in the controls pop-up or Settings → Slideshow to keep artwork details and available now-playing information on screen. The translucent panel starts in the upper right, then moves to upper left, bottom left, and bottom right at each artwork change. The setting is saved between launches.
 
 Controls remain visible until dismissed. Up/Down can be clickpad directional presses or directional swipes recognized by tvOS; no touch-only swipe is required. Closing Settings restores slideshow focus and the artwork timer.
 

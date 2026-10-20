@@ -21,6 +21,7 @@ struct SettingsView: View {
     @State private var draftServerURL: String = ""
     @State private var draftUsername: String = ""
     @State private var draftPassword: String = ""
+    @State private var draftAlwaysShowInfo = false
     @State private var draftImageDuration: TimeInterval = 420
     @State private var draftAudioMode: AudioMode = .coolStations
     @State private var draftRadioURL: String = ""
@@ -61,14 +62,16 @@ struct SettingsView: View {
                     }
 
                     Section("Slideshow") {
-                        Picker("Image Duration", selection: $draftImageDuration) {
-                            Text("30 seconds").tag(TimeInterval(30))
-                            Text("1 minute").tag(TimeInterval(60))
-                            Text("2 minutes").tag(TimeInterval(120))
-                            Text("5 minutes").tag(TimeInterval(300))
-                            Text("7 minutes").tag(TimeInterval(420))
-                            Text("10 minutes").tag(TimeInterval(600))
-                            Text("30 minutes").tag(TimeInterval(1800))
+                        Toggle("Always Show Info", isOn: $draftAlwaysShowInfo)
+                        NavigationLink {
+                            ImageDurationPicker(selection: $draftImageDuration)
+                        } label: {
+                            HStack {
+                                Text("Image Duration")
+                                Spacer()
+                                Text(SlideshowDuration(rawValue: draftImageDuration)?.label ?? "\(Int(draftImageDuration)) seconds")
+                                    .foregroundStyle(.secondary)
+                            }
                         }
                     }
 
@@ -134,6 +137,7 @@ struct SettingsView: View {
                     draftServerURL = settings.serverURL
                     draftUsername = settings.username
                     draftPassword = settings.password
+                    draftAlwaysShowInfo = settings.alwaysShowInfo
                     draftImageDuration = settings.imageDuration
                     draftAudioMode = settings.audioMode
                     draftRadioURL = settings.radioURL
@@ -152,6 +156,7 @@ struct SettingsView: View {
         settings.serverURL = draftServerURL.trimmingCharacters(in: .whitespacesAndNewlines)
         settings.username = draftUsername
         settings.password = draftPassword
+        settings.alwaysShowInfo = draftAlwaysShowInfo
         settings.imageDuration = draftImageDuration
         settings.audioMode = draftAudioMode
         settings.radioURL = draftRadioURL.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -174,5 +179,55 @@ struct SettingsView: View {
         } else {
             onSave()
         }
+    }
+}
+
+
+private enum SlideshowDuration: TimeInterval, CaseIterable, Identifiable {
+    case seconds30 = 30
+    case minute1 = 60
+    case minutes2 = 120
+    case minutes5 = 300
+    case minutes7 = 420
+    case minutes10 = 600
+    case minutes30 = 1800
+
+    var id: TimeInterval { rawValue }
+    var label: String {
+        switch self {
+        case .seconds30: "30 seconds"
+        case .minute1: "1 minute"
+        default: "\(Int(rawValue / 60)) minutes"
+        }
+    }
+}
+
+struct ImageDurationPicker: View {
+    @Binding var selection: TimeInterval
+    @Environment(\.dismiss) private var dismiss
+    @FocusState private var focusedDuration: SlideshowDuration?
+
+    var body: some View {
+        List(SlideshowDuration.allCases) { duration in
+            Button {
+                selection = duration.rawValue
+                dismiss()
+            } label: {
+                HStack {
+                    Text(duration.label)
+                    Spacer()
+                    if selection == duration.rawValue {
+                        Image(systemName: "checkmark")
+                            .accessibilityLabel("Selected")
+                    }
+                }
+            }
+            .focused($focusedDuration, equals: duration)
+        }
+        .navigationTitle("Image Duration")
+        .onAppear {
+            focusedDuration = SlideshowDuration(rawValue: selection) ?? .minutes7
+        }
+        .onExitCommand { dismiss() }
     }
 }

@@ -8,6 +8,8 @@ struct SlideshowView: View {
     @State private var history: [WebDAVImage] = []
     @State private var historyIndex: Int = -1
     @State private var currentUIImage: UIImage?
+    @State private var displayedImage: WebDAVImage?
+    @State private var infoCorner: InfoOverlayCorner = .upperRight
     @State private var timer: Timer?
     @State private var metadataText: String?
     @State private var showFilename = false
@@ -33,7 +35,9 @@ struct SlideshowView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .ignoresSafeArea()
                 .accessibilityLabel("Artwork controls")
-                .accessibilityHint("Press Select for Settings and music controls, or press Down to open Settings")
+                .accessibilityHint(settings.alwaysShowInfo
+                    ? "Press Up to move the info overlay, Select for Settings and music controls, or Down to hide the info overlay"
+                    : "Press Select for Settings and music controls, or Down to show the info overlay")
                 .disabled(showFilename || showSettings)
                 .focused($slideshowFocused)
                 .focusEffectDisabled()
@@ -42,13 +46,26 @@ struct SlideshowView: View {
                     switch direction {
                     case .right: Task { await advance() }
                     case .left:  Task { await goBack() }
-                    case .up:    showControls()
-                    case .down:  openSettings()
+                    case .up:
+                        if settings.alwaysShowInfo, displayedImage != nil {
+                            infoCorner = infoCorner.next
+                        } else {
+                            showControls()
+                        }
+                    case .down:  settings.alwaysShowInfo.toggle()
                     default:     break
                     }
                 }
 
-            if showFilename, let img = currentImage {
+            if settings.alwaysShowInfo, let image = displayedImage, !showFilename, !showSettings {
+                PersistentInfoOverlay(
+                    artwork: metadataText ?? image.displayPath,
+                    nowPlaying: audio.isPlaying ? audio.nowPlaying : nil,
+                    corner: infoCorner
+                )
+            }
+
+            if showFilename, let img = displayedImage {
                 FilenameOverlay(
                     image: img,
                     metadataText: metadataText,
@@ -103,18 +120,19 @@ struct SlideshowView: View {
         }
         .task {
             UIApplication.shared.isIdleTimerDisabled = true
-            if index.images.isEmpty { await refreshIndex() }
+            // App updates can move the bundle, invalidating cached built-in URLs.
+            if settings.artworkSource == .builtin || index.images.isEmpty { await refreshIndex() }
             if currentImage == nil { await advance() }
             startTimer()
             await audio.start(settings: settings)
             slideshowFocused = !showFilename && !showSettings
         }
-        .task(id: currentImage?.url) {
-            metadataText = nil
-            guard let image = currentImage, !image.url.isFileURL,
+        .task(id: displayedImage?.url) {
+            metadataText = displayedImage.flatMap { BuiltinPaintings.metadata(for: $0.url) }
+            guard let image = displayedImage, !image.url.isFileURL,
                   settings.artworkSource == .webdav, let client = settings.makeClient() else { return }
             let text = await client.metadata(for: image.url)
-            guard !Task.isCancelled, currentImage?.url == image.url else { return }
+            guard !Task.isCancelled, displayedImage?.url == image.url else { return }
             metadataText = text
         }
         .onDisappear {
@@ -133,7 +151,7 @@ struct SlideshowView: View {
                 Image(uiImage: ui)
                     .resizable()
                     .scaledToFit()
-                    .id(currentImage?.url.absoluteString)
+                    .id(displayedImage?.url.absoluteString)
                     .transition(.opacity)
             } else if index.isLoading {
                 VStack(spacing: 24) {
@@ -147,7 +165,7 @@ struct SlideshowView: View {
                         .font(.title2)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 200)
-                    Text("Press Select or Down to open Settings")
+                    Text("Press Select to open Settings")
                         .foregroundStyle(.white)
                 }
             }
@@ -157,7 +175,7 @@ struct SlideshowView: View {
     }
 
     private func showControls() {
-        if currentImage != nil {
+        if displayedImage != nil {
             showFilename = true
         } else {
             openSettings()
@@ -205,7 +223,12 @@ struct SlideshowView: View {
 
     private func loadCurrent() async {
         guard let img = currentImage else { return }
-        if let ui = await download(img) {
+        if let ui = await download(img), currentImage?.url == img.url {
+            if displayedImage?.url != img.url {
+                if displayedImage != nil { infoCorner = infoCorner.next }
+                metadataText = BuiltinPaintings.metadata(for: img.url)
+            }
+            displayedImage = img
             currentUIImage = ui
         }
     }
